@@ -1,0 +1,35 @@
+{
+  "name": "pulsy",
+  "version": "0.0.3",
+  "description": "storage for react",
+  "private": false,
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "rollup": "rollup -c --bundleConfigAsCjs"
+  },
+  "author": "ngdream",
+  "license": "ISC",
+  "dependencies": {
+    "pulsy": "file:",
+    "tslib": "^2.7.0"
+  },
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^26.0.1",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-typescript": "^11.1.6",
+    "@types/node": "^22.5.0",
+    "@types/react": "^18.3.4",
+    "rollup": "^4.21.0",
+    "rollup-plugin-dts": "^6.1.1",
+    "typescript": "^5.5.4"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1"
+  }
+}
