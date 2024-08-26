@@ -1,7 +1,7 @@
 {
   "name": "pulsy",
   "version": "0.0.5",
-  "description": "storage for react",
+  "description": "Don't let state management stress you out. Let Pulsy take the pulse of your React app and keep things running smoothly.",
   "private": false,
   "readme": "README.md",
   "repository": {
