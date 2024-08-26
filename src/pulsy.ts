@@ -178,49 +178,46 @@ export default function usePulsy<T>(
   });
 
   // Define setter function to update the store and notify all reloaders
-  const setter = useCallback(
-    async (newValue: T | ((prevValue: T) => T)) => {
-      devTools.mark(`usePulsy-setter-start-${name}`);
+  const setter = useCallback(async (newValue: T | ((prevValue: T) => T)) => {
+    devTools.mark(`usePulsy-setter-start-${name}`);
 
-      const store = storeRef.current;
-      if (store) {
-        try {
-          let updatedValue =
-            typeof newValue === "function"
-              ? (newValue as (prevValue: T) => T)(store.value)
-              : newValue;
+    const store = storeRef.current;
+    if (store) {
+      try {
+        let updatedValue =
+          typeof newValue === "function"
+            ? (newValue as (prevValue: T) => T)(store.value)
+            : newValue;
 
-          // Apply middleware
-          for (const middleware of store.middleware) {
-            updatedValue = await middleware(updatedValue, store.value, name);
-          }
-
-          store.value = updatedValue;
-          store.reloaders.forEach((r) => r(updatedValue));
-          if (pulsyConfig.onStoreUpdate) {
-            pulsyConfig.onStoreUpdate(name, updatedValue);
-          }
-          devTools.log(`Store updated: ${name}`, "info", updatedValue);
-          if (pulsyConfig.persist ?? pulsyConfig.defaultPersist) {
-            localStorage.setItem(name, JSON.stringify(updatedValue));
-            devTools.log(`Store "${name}" persisted after update.`, "info");
-          }
-        } catch (error) {
-          devTools.log(
-            `Error updating store "${name}": ${(error as Error).message}`,
-            "error"
-          );
+        // Apply middleware
+        for (const middleware of store.middleware) {
+          updatedValue = await middleware(updatedValue, store.value, name);
         }
+
+        store.value = updatedValue;
+        store.reloaders.forEach((r) => r(updatedValue));
+        if (pulsyConfig.onStoreUpdate) {
+          pulsyConfig.onStoreUpdate(name, updatedValue);
+        }
+        devTools.log(`Store updated: ${name}`, "info", updatedValue);
+        if (pulsyConfig.persist ?? pulsyConfig.defaultPersist) {
+          localStorage.setItem(name, JSON.stringify(updatedValue));
+          devTools.log(`Store "${name}" persisted after update.`, "info");
+        }
+      } catch (error) {
+        devTools.log(
+          `Error updating store "${name}": ${(error as Error).message}`,
+          "error"
+        );
       }
-      devTools.mark(`usePulsy-setter-end-${name}`);
-      devTools.measure(
-        `usePulsy-setter-${name}`,
-        `usePulsy-setter-start-${name}`,
-        `usePulsy-setter-end-${name}`
-      );
-    },
-    [name]
-  );
+    }
+    devTools.mark(`usePulsy-setter-end-${name}`);
+    devTools.measure(
+      `usePulsy-setter-${name}`,
+      `usePulsy-setter-start-${name}`,
+      `usePulsy-setter-end-${name}`
+    );
+  }, []);
 
   useEffect(() => {
     devTools.mark(`usePulsy-effect-start-${name}`);
@@ -245,7 +242,7 @@ export default function usePulsy<T>(
         `usePulsy-effect-end-${name}`
       );
     };
-  }, [name]);
+  }, []);
 
   // Memoize the value if memoization is enabled for this store
   const memoizedValue = useMemo(
