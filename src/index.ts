@@ -1,6 +1,9 @@
+import { devTools } from "./devtools";
 import usePulsy from "./pulsy";
 
 export default usePulsy;
+export { usePulsy };
+export { devTools };
 export {
   createStore,
   configurePulsy,
@@ -12,4 +15,7 @@ export {
   createActions,
   createComputedStore,
   useTimeTravel,
+  setStoreValue,
+  clearPersistedStores,
+  createSetter,
 } from "./pulsy";
