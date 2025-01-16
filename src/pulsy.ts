@@ -252,6 +252,16 @@ export function initializePulsy(
 }
 
 // Function to clear persisted stores
+/**
+ * Clears all persisted stores from the specified storage type.
+ *
+ * This function iterates through all keys in the provided storage type
+ * (default is `localStorage`) and removes any key that starts with "pulsy_".
+ *
+ * @param storageType - The storage type to clear the persisted stores from. Defaults to `localStorage`.
+ *
+ * @returns void
+ */
 export function clearPersistedStores(
   storageType: Storage = localStorage
 ): void {
@@ -264,6 +274,25 @@ export function clearPersistedStores(
 }
 
 // Hook to use a Pulsy store
+/**
+ * Custom hook `usePulsy` for managing state with a store.
+ *
+ * @template T - The type of the state value.
+ * @param {string} name - The name of the store.
+ * @returns {[T, (newValue: T | ((prevValue: T) => T)) => Promise<void>]} - A tuple containing the current state value and a setter function to update the state.
+ *
+ * @throws {Error} If the store with the specified name does not exist.
+ *
+ * @example
+ * const [value, setValue] = usePulsy<number>('counter');
+ *
+ * @remarks
+ * The setter function updates the store value and notifies all reloaders. It also applies middleware and persists the store value if configured to do so.
+ *
+ * The hook initializes the state with the existing store value and sets up an effect to manage the store's reloaders.
+ *
+ * The state value is memoized if memoization is enabled for the store.
+ */
 export default function usePulsy<T>(
   name: string
 ): [T, (newValue: T | ((prevValue: T) => T)) => Promise<void>] {
@@ -284,48 +313,6 @@ export default function usePulsy<T>(
 
   // Define setter function to update the store and notify all reloaders
   const setter = useCallback(async (newValue: T | ((prevValue: T) => T)) => {
-    // devTools.mark(`usePulsy-setter-start-${name}`);
-
-    // const store = storeRef.current;
-    // if (store) {
-    //   try {
-    //     let updatedValue =
-    //       typeof newValue === "function"
-    //         ? (newValue as (prevValue: T) => T)(store.value)
-    //         : newValue;
-
-    //     // Apply middleware
-    //     for (const middleware of store.middleware) {
-    //       updatedValue = await middleware(updatedValue, store.value, name);
-    //     }
-
-    //     store.value = updatedValue;
-    //     store.reloaders.forEach((r) => r(updatedValue));
-    //     if (pulsyConfig.onStoreUpdate) {
-    //       pulsyConfig.onStoreUpdate(name, updatedValue);
-    //     }
-    //     devTools.log(`Store updated: ${name}`, "info", updatedValue);
-    //     if (
-    //       (store.persist == undefined &&
-    //         (pulsyConfig.persist ?? pulsyConfig.defaultPersist)) ||
-    //       store.persist == true
-    //     ) {
-    //       localStorage.setItem(name, JSON.stringify(updatedValue));
-    //       devTools.log(`Store "${name}" persisted after update.`, "info");
-    //     }
-    //   } catch (error) {
-    //     devTools.log(
-    //       `Error updating store "${name}": ${(error as Error).message}`,
-    //       "error"
-    //     );
-    //   }
-    // }
-    // devTools.mark(`usePulsy-setter-end-${name}`);
-    // devTools.measure(
-    //   `usePulsy-setter-${name}`,
-    //   `usePulsy-setter-start-${name}`,
-    //   `usePulsy-setter-end-${name}`
-    // );
     const setter = await createSetter(name);
     setter(newValue);
   }, []);
@@ -360,11 +347,31 @@ export default function usePulsy<T>(
 }
 
 // Utility function to create a namespaced store
+/**
+ * Creates a namespaced store function.
+ *
+ * This function generates a store function that prefixes the provided key with the given namespace.
+ * It is useful for organizing and managing state in a modular way.
+ *
+ * @param namespace - The namespace to prefix the key with.
+ * @returns A function that takes a key and returns the result of `usePulsy` with the namespaced key.
+ *
+ * @template T - The type of the state managed by the store.
+ */
 export const createNamespacedStore = (namespace: string) => {
   return <T>(key: string) => usePulsy<T>(`${namespace}:${key}`);
 };
 
 // Function to add middleware to an existing store
+/**
+ * Adds a middleware to the specified store.
+ *
+ * @template T - The type of the store's state.
+ * @param {string} name - The name of the store to which the middleware will be added.
+ * @param {Middleware<T>} middleware - The middleware function to add to the store.
+ * @throws {Error} If the store with the specified name does not exist.
+ * @returns {void}
+ */
 export function addMiddleware<T>(
   name: string,
   middleware: Middleware<T>
@@ -377,6 +384,24 @@ export function addMiddleware<T>(
   devTools.log(`Middleware added to store: ${name}`, "info");
 }
 
+/**
+ * Custom hook to manage state with time travel capabilities.
+ *
+ * @template T - The type of the state value.
+ * @param {string} name - The name of the state.
+ * @returns {[
+ *   T,
+ *   (newValue: T | ((prevValue: T) => T)) => Promise<void>,
+ *   () => void,
+ *   () => void,
+ *   T[]
+ * ]} - Returns an array containing:
+ *   - The current state value.
+ *   - A function to update the state value.
+ *   - A function to undo the last state change.
+ *   - A function to redo the last undone state change.
+ *   - An array representing the history of state values.
+ */
 export function useTimeTravel<T>(
   name: string
 ): [
@@ -541,6 +566,32 @@ type Action<T> = { type: string; payload?: T };
 type ActionCreator<T> = (payload?: T) => Action<T>;
 type ActionHandler<S, T> = (state: S, action: Action<T>) => S;
 
+/**
+ * Creates a set of action creators for a given store.
+ *
+ * @template S - The type of the state managed by the store.
+ * @template T - The type of the payload for the actions.
+ *
+ * @param {string} storeName - The name of the store for which actions are being created.
+ * @param {Record<string, ActionHandler<S, T>>} actionHandlers - An object where keys are action types and values are functions that handle the actions.
+ *
+ * @returns {Record<string, ActionCreator<T>>} - An object where keys are action types and values are action creator functions.
+ *
+ * @throws {Error} - Throws an error if the store with the given name does not exist.
+ *
+ * @example
+ * ```typescript
+ * const actionHandlers = {
+ *   increment: (state, action) => ({ ...state, count: state.count + 1 }),
+ *   decrement: (state, action) => ({ ...state, count: state.count - 1 }),
+ * };
+ *
+ * const actions = createActions('counterStore', actionHandlers);
+ *
+ * actions.increment();
+ * actions.decrement();
+ * ```
+ */
 export function createActions<S, T>(
   storeName: string,
   actionHandlers: Record<string, ActionHandler<S, T>>
